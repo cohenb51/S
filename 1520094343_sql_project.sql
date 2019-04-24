@@ -88,12 +88,11 @@ Include in your output the name of the court, and the name of the member
 formatted as a single column. Ensure no duplicate data, and order by
 the member name. */
 
-SELECT DISTINCT m.firstname, f.name
+SELECT DISTINCT CONCAT(m.firstname, m.surname) as name, f.name
 FROM Members AS m
 NATURAL JOIN Facilities AS f
 WHERE f.name LIKE 'Tennis Court%'
 ORDER BY m.firstname
-
 
 /* Q8: How can you produce a list of bookings on the day of 2012-09-14 which
 will cost the member (or guest) more than $30? Remember that guests have
@@ -102,10 +101,54 @@ the guest user's ID is always 0. Include in your output the name of the
 facility, the name of the member formatted as a single column, and the cost.
 Order by descending cost, and do not use any subqueries. */
 
+SELECT f.name, CONCAT(m.firstname,' ', m.surname), Case
+When memid = 0 then f.guestcost
+ELSE f.membercost END as cost
+FROM Bookings natural join Facilities as f natural join Members as m WHERE starttime like '2012-09-14%' and 
+Case
+When memid = 0 then f.guestcost > 30
+ELSE f.membercost > 30 END
+ORDER BY cost DESC
 
 /* Q9: This time, produce the same result as in Q8, but using a subquery. */
+SELECT fullname, facility_name cost
+FROM (
+SELECT f.name AS facility_name, CONCAT( m.firstname, ' ', m.surname ) AS fullname, 
+CASE 
+WHEN memid =0
+THEN f.guestcost
+ELSE f.membercost
+END AS cost
+FROM Bookings
+NATURAL JOIN Facilities AS f
+NATURAL JOIN Members AS m
+WHERE starttime LIKE '2012-09-14%'
+) AS subTable
+WHERE cost >30
+
+
 
 
 /* Q10: Produce a list of facilities with a total revenue less than 1000.
 The output of facility name and total revenue, sorted by revenue. Remember
 that there's a different cost for guests and members! */
+ Showing rows 0 - 3 (4 total, Query took 0.0154 sec)
+
+SELECT facility_name, sum( cost ) 
+FROM (
+
+SELECT f.name AS facility_name, 
+CASE 
+WHEN memid =0
+THEN f.guestcost
+ELSE f.membercost
+END AS cost
+FROM Bookings
+NATURAL JOIN Facilities AS f
+NATURAL JOIN Members AS m
+) AS subtable
+GROUP BY facility_name
+HAVING sum( cost ) <1000
+
+
+
