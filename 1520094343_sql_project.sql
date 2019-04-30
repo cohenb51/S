@@ -28,9 +28,8 @@ exploring the data, and getting acquainted with the 3 tables. */
 Please list the names of the facilities that do. */
 SELECT * 
 FROM Facilities
-WHERE membercost =0
+WHERE membercost > 0
 
-RS: Badminton Court, Table Tennis, Snooker Tennis, Pool Table 
 
 
 /* Q2: How many facilities do not charge a fee to members? */
@@ -47,7 +46,7 @@ where the fee is less than 20% of the facility's monthly maintenance cost?
 Return the facid, facility name, member cost, and monthly maintenance of the
 facilities in question. */
 
-SELECT facid, name, membercost, monthlymaintenance FROM Facilities WHERE membercost/monthlymaintenance * 100 >= .2
+SELECT facid, name, membercost, monthlymaintenance FROM Facilities WHERE membercost/monthlymaintenance <= .2
 
 
 
@@ -77,10 +76,12 @@ FROM Facilities
 /* Q6: You'd like to get the first and last name of the last member(s)
 who signed up. Do not use the LIMIT clause for your solution. */
 
-SELECT firstname, surname
+SELECT firstname, surname, joindate
 FROM Members
-ORDER BY joindate DESC 
-LIMIT 5
+WHERE joindate = (
+SELECT MAX( joindate ) 
+FROM Members
+)
 
 
 /* Q7: How can you produce a list of all members who have used a tennis court?
@@ -102,13 +103,14 @@ facility, the name of the member formatted as a single column, and the cost.
 Order by descending cost, and do not use any subqueries. */
 
 SELECT f.name, CONCAT(m.firstname,' ', m.surname), Case
-When memid = 0 then f.guestcost
-ELSE f.membercost END as cost
+When memid = 0 then f.guestcost *slots
+ELSE f.membercost * slots END as cost 
 FROM Bookings natural join Facilities as f natural join Members as m WHERE starttime like '2012-09-14%' and 
 Case
-When memid = 0 then f.guestcost > 30
-ELSE f.membercost > 30 END
+When memid = 0 then f.guestcost *slots > 30
+ELSE f.membercost *slots > 30 END
 ORDER BY cost DESC
+
 
 /* Q9: This time, produce the same result as in Q8, but using a subquery. */
 SELECT fullname, facility_name cost
@@ -116,8 +118,8 @@ FROM (
 SELECT f.name AS facility_name, CONCAT( m.firstname, ' ', m.surname ) AS fullname, 
 CASE 
 WHEN memid =0
-THEN f.guestcost
-ELSE f.membercost
+THEN f.guestcost * slots
+ELSE f.membercost * slots
 END AS cost
 FROM Bookings
 NATURAL JOIN Facilities AS f
@@ -125,6 +127,7 @@ NATURAL JOIN Members AS m
 WHERE starttime LIKE '2012-09-14%'
 ) AS subTable
 WHERE cost >30
+ORDER BY cost DESC
 
 
 
@@ -132,16 +135,15 @@ WHERE cost >30
 /* Q10: Produce a list of facilities with a total revenue less than 1000.
 The output of facility name and total revenue, sorted by revenue. Remember
 that there's a different cost for guests and members! */
- Showing rows 0 - 3 (4 total, Query took 0.0154 sec)
 
-SELECT facility_name, sum( cost ) 
+SELECT facility_name, sum(cost) 
 FROM (
 
 SELECT f.name AS facility_name, 
 CASE 
 WHEN memid =0
-THEN f.guestcost
-ELSE f.membercost
+THEN f.guestcost * slots
+ELSE f.membercost * slots
 END AS cost
 FROM Bookings
 NATURAL JOIN Facilities AS f
@@ -149,6 +151,4 @@ NATURAL JOIN Members AS m
 ) AS subtable
 GROUP BY facility_name
 HAVING sum( cost ) <1000
-
-
 
