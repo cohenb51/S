@@ -9,3 +9,4 @@ This notebook contains
 2. A notebook showing how the model was created. 
 3. A notebook showing how the model can be used to generate strings computers can interpret.
 4. A full report describing all the details. 
+5. A demo of how the tesseract library is used
